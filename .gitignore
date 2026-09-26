@@ -1,0 +1,6 @@
+.env
+data/logistics.db
+data/geocache.json
+data/plans/
+__pycache__/
+.pytest_cache/

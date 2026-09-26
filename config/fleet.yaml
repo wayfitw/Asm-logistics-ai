@@ -1,0 +1,71 @@
+# Парк, водители и база. Всё, что в ТЗ задано жёстко, — здесь, а не в промпте.
+
+base:
+  name: "База АСМ"
+  address: "111024, г. Москва, проезд Фрезер, д. 2, стр. 45"
+  lat: 55.7349
+  lon: 37.7626
+
+shift:
+  start: "08:00"
+  end: "18:00"          # до этого времени водитель должен вернуться на базу
+  default_service_min: 25
+  default_window: ["09:00", "18:00"]   # если у склада КА нет графика
+  balance_weight: 1     # 0 — минимум машин/км; больше — ровнее нагрузка между водителями
+
+vehicles:
+  - id: staria_1
+    name: "Hyundai Staria №1 (цельнометалл.)"
+    plate: "С249ОР40"
+    capacity_kg: 1000
+    volume_m3: 4.9
+    closed_body: true
+    fits_europallet: false        # внутр. ширина ~1,6 м
+    reserve: false
+  - id: staria_2
+    name: "Hyundai Staria №2 (съёмные сиденья)"
+    plate: ""
+    capacity_kg: 1000
+    volume_m3: 4.9
+    closed_body: true
+    fits_europallet: false
+    reserve: false
+  - id: foton
+    name: "Foton Toano"
+    plate: "С856ТС797"
+    capacity_kg: 1500
+    volume_m3: 12
+    closed_body: true
+    fits_europallet: true
+    reserve: false
+  - id: gazel
+    name: "ГАЗель бортовая (усил.)"
+    plate: ""
+    capacity_kg: 3000
+    volume_m3: 8.3              # 3,09 × 2,08 × до 2,0 м по высоте груза
+    closed_body: false          # открытый борт — не для груза, боящегося влаги
+    fits_europallet: true
+    reserve: true               # резерв: берём, только если без неё не справиться
+
+drivers:
+  - id: kolesnikov
+    name: "Колесников Дмитрий Викторович"
+    phone: "+7 916 579-22-37"
+    bitrix_user_id: null
+    schedule: {type: "5/2"}                     # пн–пт
+    vehicles: [staria_1]
+  - id: rybkin
+    name: "Рыбкин Максим Александрович"
+    phone: "+7 903 109-80-18"
+    bitrix_user_id: null
+    schedule: {type: "5/2"}
+    vehicles: [foton, gazel]
+  - id: ushakov
+    name: "Ушаков Олег"
+    phone: ""
+    bitrix_user_id: null
+    schedule: {type: "2/2", cycle_start: "2026-09-23"}   # первый рабочий день цикла — уточнить
+    vehicles: [staria_2, gazel]
+
+# Разовые выходы вне графика / отгулы: дата -> {driver_id: true|false}
+overrides: {}

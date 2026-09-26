@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>АСМ · Маршруты</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1c1f24;--mute:#6b7280;--line:#e3e6ea;--acc:#ffcc00;--red:#d93a3a;--amber:#b7791f;--violet:#6d4aff;--green:#1f8f4e}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#1c1f24;color:#fff;position:sticky;top:0;z-index:1000}
+header h1{font-size:16px;margin:0 12px 0 0}
+header .sp{flex:1}
+button,.btn{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;background:#fff;color:#1c1f24}
+button.pri{background:var(--acc)} button.ok{background:#2fb36b;color:#fff} button:disabled{opacity:.5;cursor:default}
+input[type=date]{border-radius:8px;border:0;padding:7px;font:inherit}
+.pill{font-size:12px;padding:3px 8px;border-radius:999px;background:#333}
+.pill.on{background:#2fb36b}
+main{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:12px;padding:12px 16px}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+.banner{border-radius:10px;padding:10px 12px;margin-bottom:8px;white-space:pre-wrap}
+.banner.bad{background:#fdecec;border:1px solid #f3b4b4}
+.banner.q{background:#fff6e0;border:1px solid #f1d38c}
+.banner.ai{background:#eef0ff;border:1px solid #c9c7ff}
+.banner b{display:block;margin-bottom:4px}
+.routes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h3{margin:0;padding:10px 12px;font-size:14px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+.card h3 .dot{width:12px;height:12px;border-radius:50%}
+.card .sub{padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px}
+.card .sub a{color:inherit}
+.grp{width:100%;font-weight:600;margin-top:4px}
+.mute{color:var(--mute);font-size:12px}
+.odo input{width:90px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.alt{margin-top:6px} .alt select{max-width:100%;margin-top:4px;font:inherit}
+.tsp{padding:6px 12px;font-size:12px;color:var(--green);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tsp.gain{color:var(--amber);background:#fff8e6}
+.tsp button{padding:3px 8px;font-size:12px;background:var(--acc)}
+.list{min-height:48px;padding:6px}
+.list.over{background:#fffbe6}
+.stop{border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin:4px 0;background:#fff;cursor:grab}
+.stop .top{display:flex;gap:6px;align-items:baseline}
+.stop .eta{font-weight:700;min-width:42px}
+.stop .ttl{font-weight:600;flex:1}
+.stop .addr{color:var(--mute);font-size:12px}
+.stop .more{display:none;font-size:12px;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.stop.open .more{display:block}
+.stop.virt{background:#f7f7f7}
+.b{font-size:11px;padding:1px 6px;border-radius:4px;color:#fff;white-space:nowrap}
+.b.u{background:var(--red)} .b.a{background:var(--violet)} .b.r{background:var(--amber)} .b.l{background:#555} .b.k{background:#8a94a3}
+.warn{color:var(--amber)}
+.stop .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.stop .acts button{padding:3px 8px;font-size:12px;background:#eef0f3}
+#map{height:360px;border-radius:12px;border:1px solid var(--line)}
+.side .card{margin-top:12px}
+.side textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;resize:vertical}
+.side .pad{padding:10px 12px}
+#chat{max-height:260px;overflow:auto;font-size:13px}
+#chat .m{margin:6px 0;padding:6px 8px;border-radius:8px;white-space:pre-wrap}
+#chat .me{background:#fff6cc} #chat .bot{background:#eef0ff}
+.veh{display:flex;flex-wrap:wrap;gap:10px;font-size:13px}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1c1f24;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:2000;max-width:90vw}
+.busy{position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;z-index:1500;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>АСМ · Планирование маршрутов</h1>
+  <input type="date" id="day">
+  <span class="pill" id="llm">ИИ</span>
+  <span class="pill" id="status">—</span>
+  <span class="sp"></span>
+  <button onclick="buildSample()">Пример заявок</button>
+  <label class="btn">Загрузить заявки<input type="file" id="file" accept=".json,.csv,.xlsx" hidden onchange="buildFile(this)"></label>
+  <button onclick="replan()" id="bReplan">Пересчитать</button>
+  <button class="pri" onclick="approve()" id="bApprove">Утвердить</button>
+  <button onclick="reopen()" id="bReopen" hidden>Вернуть в черновик</button>
+  <button class="ok" onclick="sendAll()" id="bSend" hidden>Отправить водителям</button>
+</header>
+
+<main>
+  <section>
+    <div id="banners"></div>
+    <div class="routes" id="routes"><div class="empty">Плана на эту дату нет. Загрузите заявки или нажмите «Пример заявок».</div></div>
+  </section>
+  <aside class="side">
+    <div id="map"></div>
+    <div class="card"><h3>Машины и водители</h3><div class="pad veh" id="veh"></div></div>
+    <div class="card"><h3>Помощник (правки обычным текстом)</h3>
+      <div class="pad"><div id="chat"></div>
+        <textarea id="msg" placeholder="Например: Балашиху отдай Ушакову, а Staria №1 утром в сервис до 11"></textarea>
+        <button class="pri" onclick="ask()">Выполнить</button></div></div>
+    <div class="card"><h3>Срочная заявка</h3>
+      <div class="pad"><textarea id="urgent" placeholder="Текст как пишете в таблицу: адрес, что сделать, к какому времени, контакт"></textarea>
+        <button onclick="addUrgent()">Добавить и пересчитать</button></div></div>
+  </aside>
+</main>
+<div id="toast"></div><div class="busy" id="busy">Считаю…</div>
+
+<script>
+const COLORS = ["#e4572e","#2e86de","#17a673","#8e44ad","#f39c12"];
+const KIND = {pickup:"Забрать", delivery:"Выгрузить", service:"Задача"};
+let S = {plan:null, fleet:null};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const day = () => $("day").value;
+
+function toast(t){ const el=$("toast"); el.textContent=t; el.style.display="block"; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display="none",4500); }
+async function api(path, opts={}){
+  $("busy").style.display="flex";
+  try{
+    const r = await fetch(path, opts);
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(Array.isArray(j.detail) ? j.detail.map(d=>d.msg).join("; ") : (j.detail || r.statusText));
+    return j;
+  } finally { $("busy").style.display="none"; }
+}
+const post = (p, body) => api(p, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body||{})});
+
+async function load(){
+  const j = await api(`/api/state/${day()}`);
+  S.fleet = j.fleet; S.plan = j.plan;
+  $("llm").textContent = j.llm ? `ИИ: ${j.model}` : "ИИ выключен (нет ключа)";
+  $("llm").className = "pill" + (j.llm ? " on" : "");
+  render();
+}
+
+const driver = id => S.fleet.drivers.find(d=>d.id===id);
+const vehicle = id => S.fleet.vehicles.find(v=>v.id===id);
+
+function stopHtml(id, p, locked){
+  const s = S.plan.stops[id]; if(!s) return "";
+  const virt = id.startsWith("load:");
+  const badges = [
+    s.urgent ? '<span class="b u">срочно</span>' : "",
+    s.requires_approval ? '<span class="b a">по согласованию</span>' : "",
+    s.needs_review ? '<span class="b r">проверить</span>' : "",
+    locked ? '<span class="b l">закреплено</span>' : "",
+    s.weight_kg ? `<span class="b k">${Math.round(s.weight_kg)} кг</span>` : ""].join(" ");
+  const draggable = S.plan.status==="draft" && !virt;
+  return `<div class="stop${virt?" virt":""}" draggable="${draggable}" data-id="${esc(id)}" onclick="this.classList.toggle('open')">
+    <div class="top"><span class="eta">${p ? p.eta : ""}</span><span class="ttl">${esc(KIND[s.kind])}: ${esc(s.title||s.address)}</span></div>
+    <div class="addr">${esc(s.address)} · окно ${s.tw_start}–${s.tw_end}</div>
+    <div>${badges}</div>
+    <div class="more">
+      ${s.task ? `<div><b>Задача:</b> ${esc(s.task)}</div>` : ""}
+      ${s.contact ? `<div><b>Контакт:</b> ${esc(s.contact)}</div>` : ""}
+      ${s.order_no||s.invoice_no ? `<div><b>Заказ/счёт:</b> ${esc(s.order_no)} ${esc(s.invoice_no)}</div>` : ""}
+      ${(s.warnings||[]).map(w=>`<div class="warn">⚠ ${esc(w)}</div>`).join("")}
+      ${draggable && (s.alt_addresses||[]).length ? `<div class="alt" onclick="event.stopPropagation()"><b>Другой склад контрагента:</b>
+        <select onchange="if(this.value) setAddress('${esc(id)}', this.value)"><option value="">— выбрать —</option>
+        ${s.alt_addresses.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("")}</select></div>` : ""}
+      ${draggable ? `<div class="acts" onclick="event.stopPropagation()">
+        <button onclick="editWindow('${esc(id)}')">Окно/время</button>
+        <button onclick="editAddress('${esc(id)}')">Адрес</button>
+        <button onclick="toggleUrgent('${esc(id)}')">${s.urgent?"Не срочно":"Срочно"}</button>
+        <button onclick="move('${esc(id)}', null, null)">Снять с плана</button></div>` : ""}
+    </div></div>`;
+}
+
+function render(){
+  const P = S.plan;
+  const locked = P && P.status !== "draft";
+  $("veh").innerHTML = `<div class="grp">Машины</div>` + S.fleet.vehicles.map(v=>`<label><input type="checkbox" data-v="${v.id}" ${locked?"disabled":""} ${P && P.unavailable_vehicles.includes(v.id) ? "" : "checked"}> ${esc(v.name)}</label>`).join("")
+    + `<div class="grp">Водители на ${day().split("-").reverse().join(".")}</div>` + S.fleet.drivers.map(d=>`<label title="${esc(d.schedule?.type||"")}"><input type="checkbox" data-d="${d.id}" ${locked?"disabled":""} ${d.works_today?"checked":""} onchange="toggleDriver('${d.id}', this.checked)"> ${esc(d.name.split(" ").slice(0,2).join(" "))} <span class="mute">${esc(d.schedule?.type||"")}</span></label>`).join("");
+  if(!P){ $("routes").innerHTML = '<div class="empty">Плана на эту дату нет. Загрузите заявки или нажмите «Пример заявок».</div>'; $("banners").innerHTML=""; $("status").textContent="—"; drawMap(); return; }
+  const draft = P.status==="draft";
+  $("status").textContent = {draft:"Черновик", approved:"Утверждён", sent:"Отправлен"}[P.status];
+  $("bApprove").hidden = !draft; $("bReplan").hidden = !draft; $("bReopen").hidden = draft; $("bSend").hidden = draft;
+
+  let b = "";
+  if(P.violations.length) b += `<div class="banner bad"><b>Нарушения ограничений (${P.violations.length})</b>${P.violations.map(esc).join("\n")}</div>`;
+  if(P.questions.length) b += `<div class="banner q"><b>Вопросы ИИ по заявкам</b>${P.questions.map(esc).join("\n")}</div>`;
+  if(P.notes.length) b += `<div class="banner ai"><b>Пояснение</b>${P.notes.map(esc).join("\n")}</div>`;
+  $("banners").innerHTML = b;
+
+  const cards = P.routes.map((r,i)=>{
+    const d = driver(r.driver_id), v = vehicle(r.vehicle_id);
+    return `<div class="card"><h3><span class="dot" style="background:${COLORS[i%COLORS.length]}"></span>${esc(d.name)}</h3>
+      <div class="sub"><span>${esc(v.name)} ${esc(v.plate||"")}</span><span>возврат ${r.return_eta}</span><span>${r.distance_km} км</span>
+        <span>макс. ${Math.round(r.load_kg_max)}/${v.capacity_kg} кг</span>
+        <a href="/driver/${day()}/${r.driver_id}" target="_blank">лист водителя</a><a href="${esc(r.yandex_url)}" target="_blank">Я.Карты</a>
+        <label class="odo">пробег утром, км <input type="number" min="0" step="1" value="${r.odometer_start ?? ""}" onchange="edit('set_odometer',{driver_id:'${r.driver_id}', km: this.value===''? null : +this.value})"></label></div>
+      ${r.tsp ? `<div class="tsp${r.tsp_gain_min>0?" gain":""}">${esc(r.tsp)}${r.tsp_gain_min>0 && draft ? ` <button onclick="edit('optimize_order',{driver_id:'${r.driver_id}'})">Оптимальный порядок</button>` : ""}</div>` : ""}
+      <div class="list" data-driver="${r.driver_id}">${r.stops.map(p=>stopHtml(p.stop_id,p,p.locked)).join("")}</div></div>`;
+  });
+  // водители, которые работают сегодня, но без маршрута — чтобы можно было перетащить им точку
+  const used = new Set(P.routes.map(r=>r.driver_id));
+  S.fleet.drivers.filter(d=>d.works_today && !used.has(d.id)).forEach(d=>{
+    cards.push(`<div class="card"><h3><span class="dot" style="background:#bbb"></span>${esc(d.name)}</h3>
+      <div class="sub">без маршрута — перетащите точку сюда</div><div class="list" data-driver="${d.id}"></div></div>`);
+  });
+  const un = P.unassigned.map(id=>stopHtml(id,null,false)).join("");
+  const ex = P.excluded.map(id=>stopHtml(id,null,false)).join("");
+  cards.push(`<div class="card"><h3>Нераспределённые (${P.unassigned.length})</h3><div class="list" data-driver="">${un}</div></div>`);
+  if(P.excluded.length) cards.push(`<div class="card"><h3>Сняты с плана (${P.excluded.length})</h3><div class="list" data-driver="">${ex}</div></div>`);
+  $("routes").innerHTML = cards.join("");
+  bindDnD(); drawMap();
+}
+
+function bindDnD(){
+  document.querySelectorAll(".stop[draggable=true]").forEach(el=>{
+    el.addEventListener("dragstart", e=>{ e.dataTransfer.setData("text/plain", el.dataset.id); });
+  });
+  document.querySelectorAll(".list").forEach(list=>{
+    list.addEventListener("dragover", e=>{ e.preventDefault(); list.classList.add("over"); });
+    list.addEventListener("dragleave", ()=>list.classList.remove("over"));
+    list.addEventListener("drop", e=>{
+      e.preventDefault(); list.classList.remove("over");
+      const id = e.dataTransfer.getData("text/plain");
+      const items = [...list.querySelectorAll(".stop")];
+      let pos = items.findIndex(it => e.clientY < it.getBoundingClientRect().top + it.offsetHeight/2);
+      pos = pos < 0 ? items.length + 1 : pos + 1;
+      const drv = list.dataset.driver || null;
+      if(drv){
+        const r = S.plan.routes.find(r=>r.driver_id===drv);
+        const cur = r ? r.stops.map(p=>p.stop_id) : [];
+        if(cur.includes(id)){   // перестановка внутри маршрута
+          const order = cur.filter(x=>x!==id); order.splice(Math.min(pos-1, order.length), 0, id);
+          return edit("reorder_route", {driver_id: drv, stop_ids: order});
+        }
+      }
+      move(id, drv, drv ? pos : null);
+    });
+  });
+}
+
+let map, layer;
+function drawMap(){
+  if(!map){ map = L.map("map").setView([55.75,37.7],9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map); layer = L.layerGroup().addTo(map); }
+  layer.clearLayers();
+  const base = [S.fleet.base.lat, S.fleet.base.lon];
+  L.circleMarker(base,{radius:8,color:"#000",fillColor:"#ffcc00",fillOpacity:1}).bindTooltip("База").addTo(layer);
+  if(!S.plan) return;
+  const bounds = [base];
+  S.plan.routes.forEach((r,i)=>{
+    const c = COLORS[i%COLORS.length];
+    const pts = [base, ...r.stops.map(p=>{const s=S.plan.stops[p.stop_id]; return [s.lat,s.lon];}), base];
+    L.polyline(pts,{color:c,weight:3,opacity:.8}).addTo(layer);
+    r.stops.forEach((p,k)=>{ const s=S.plan.stops[p.stop_id]; if(p.stop_id.startsWith("load:")) return;
+      bounds.push([s.lat,s.lon]);
+      L.marker([s.lat,s.lon],{icon:L.divIcon({className:"",html:`<div style="background:${c};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #fff">${k+1}</div>`})})
+        .bindTooltip(`${p.eta} ${s.title}`).addTo(layer); });
+  });
+  S.plan.unassigned.forEach(id=>{ const s=S.plan.stops[id]; if(s && s.lat) L.circleMarker([s.lat,s.lon],{radius:6,color:"#999"}).bindTooltip("Не распределено: "+s.title).addTo(layer); });
+  map.fitBounds(bounds,{padding:[20,20]});
+}
+
+async function edit(tool, args){
+  try{ const j = await post(`/api/plan/${day()}/edit`, {tool, args}); S.plan = j.plan; render(); }
+  catch(e){ toast(e.message); }
+}
+const move = (stop_id, driver_id, position) => edit("move_stop", {stop_id, driver_id, position});
+function editWindow(id){ const s=S.plan.stops[id];
+  const v = prompt("Окно ЧЧ:ММ-ЧЧ:ММ", `${s.tw_start}-${s.tw_end}`); if(!v) return;
+  const [a,b] = v.split("-").map(x=>x.trim());
+  edit("update_stop", {stop_id:id, address:null, tw_start:a, tw_end:b, urgent:null, task:null, contact:null, service_min:null}); }
+function editAddress(id){ const s=S.plan.stops[id];
+  const v = prompt("Адрес", s.address); if(!v) return;
+  edit("update_stop", {stop_id:id, address:v, tw_start:null, tw_end:null, urgent:null, task:null, contact:null, service_min:null}); }
+function setAddress(id, a){ return edit("update_stop", {stop_id:id, address:a, tw_start:null, tw_end:null, urgent:null, task:null, contact:null, service_min:null}); }
+function toggleDriver(id, works){
+  // после отметки перечитываем состояние: список «кто работает» приходит вместе с парком, а не с планом
+  if(S.plan) return edit("set_driver", {driver_id:id, works}).then(load);
+  pendingDrivers[id] = works;   // плана ещё нет — учтём при формировании
+}
+let pendingDrivers = {};
+function toggleUrgent(id){ edit("update_stop", {stop_id:id, address:null, tw_start:null, tw_end:null, urgent:!S.plan.stops[id].urgent, task:null, contact:null, service_min:null}); }
+const unavailable = () => [...document.querySelectorAll("#veh input[data-v]")].filter(x=>!x.checked).map(x=>x.dataset.v);
+const replan = () => edit("replan", {unavailable_vehicles: unavailable()});
+
+async function build(form){
+  if(S.plan && S.plan.status==="draft" && !confirm("План на эту дату уже есть. Сформировать заново? Ручные правки будут потеряны.")) return;
+  form.append("unavailable", unavailable().join(","));
+  form.append("drivers", Object.entries(pendingDrivers).map(([k,v])=>`${k}:${v?1:0}`).join(","));
+  try{ S.plan = await api(`/api/plan/${day()}/build`, {method:"POST", body: form}); render(); toast("План сформирован"); }
+  catch(e){ toast(e.message); }
+}
+function buildSample(){ const f=new FormData(); f.append("sample","true"); build(f); }
+function buildFile(inp){ const f=new FormData(); f.append("file", inp.files[0]); inp.value=""; build(f); }
+
+async function approve(){
+  if(S.plan.violations.length && !confirm(`Есть нарушения (${S.plan.violations.length}). Всё равно утвердить?`)) return;
+  try{ S.plan = await post(`/api/plan/${day()}/approve`); render(); toast("План утверждён"); } catch(e){ toast(e.message); }
+}
+async function reopen(){ try{ S.plan = await post(`/api/plan/${day()}/reopen`); render(); } catch(e){ toast(e.message); } }
+async function sendAll(){
+  try{ const res = await post(`/api/plan/${day()}/send`);
+    toast(res.map(r=>`${r.driver}: ${r.sent?"отправлено":"не отправлено — "+r.reason}`).join("; ")); load(); }
+  catch(e){ toast(e.message); }
+}
+async function ask(){
+  const m = $("msg").value.trim(); if(!m) return;
+  $("chat").insertAdjacentHTML("beforeend", `<div class="m me">${esc(m)}</div>`); $("msg").value="";
+  try{ const j = await post(`/api/plan/${day()}/agent`, {message:m}); S.plan=j.plan; render();
+    $("chat").insertAdjacentHTML("beforeend", `<div class="m bot">${esc(j.answer)}</div>`); }
+  catch(e){ $("chat").insertAdjacentHTML("beforeend", `<div class="m bot">Ошибка: ${esc(e.message)}</div>`); }
+  $("chat").scrollTop = 1e9;
+}
+async function addUrgent(){
+  const t = $("urgent").value.trim(); if(!t) return;
+  try{ const j = await post(`/api/plan/${day()}/tasks`, {text:t}); S.plan=j.plan; $("urgent").value=""; render(); toast("Заявка добавлена"); }
+  catch(e){ toast(e.message); }
+}
+
+// логист планирует вечером на следующий рабочий день; дата — по местному времени, не по UTC
+function nextWorkday(){ const d = new Date(); d.setDate(d.getDate()+1); while([0,6].includes(d.getDay())) d.setDate(d.getDate()+1); return d.toLocaleDateString("sv-SE"); }
+$("day").value = nextWorkday();
+$("day").onchange = () => { pendingDrivers = {}; load(); };
+load();
+</script>
+</body>
+</html>
