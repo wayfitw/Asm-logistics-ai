@@ -4,206 +4,406 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>АСМ · Маршруты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("asm-theme")||"light"}catch(e){}</script>
 <style>
-:root{--bg:#f5f6f8;--card:#fff;--ink:#1c1f24;--mute:#6b7280;--line:#e3e6ea;--acc:#ffcc00;--red:#d93a3a;--amber:#b7791f;--violet:#6d4aff;--green:#1f8f4e}
+:root{
+  --bg:#F4F5F7; --paper:#FFFFFF; --paper-2:#F7F8FA; --ink:#1A2130; --mute:#5F6B7A; --faint:#98A2B0; --line:#DDE2E8; --line-2:#EAEDF1;
+  --acc:#1F3A5F; --acc-ink:#FFFFFF; --acc-soft:#E8EEF6;
+  --red:#B3261E; --red-soft:#FBEAE8; --amber:#8A5A0A; --amber-soft:#FBF1DD; --violet:#4C3FB3; --violet-soft:#ECEAF8;
+  --green:#1E7A45; --green-soft:#E3F1E8; --blue:#1F3A5F; --blue-soft:#E8EEF6; --gray-soft:#EDF0F3;
+  --shadow:0 1px 2px rgba(26,33,48,.04),0 6px 18px -14px rgba(26,33,48,.18);
+  --r:10px; --r-s:8px;
+  --sans:"Onest",system-ui,"Segoe UI",Roboto,sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0F1318; --paper:#171C23; --paper-2:#1D232B; --ink:#E6EAEF; --mute:#9AA5B3; --faint:#6B7684; --line:#2A323C; --line-2:#232A33;
+  --acc:#5B8DD6; --acc-ink:#FFFFFF; --acc-soft:#1C2A3D;
+  --red:#F08A82; --red-soft:#3A1F1D; --amber:#E0AE5C; --amber-soft:#362A14; --violet:#A9A0F0; --violet-soft:#27244A;
+  --green:#5FCB8E; --green-soft:#16301F; --blue:#8DB2EC; --blue-soft:#1C2A3D; --gray-soft:#242B34;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px -14px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+:root[data-theme="dark"] .leaflet-tile{filter:brightness(.72) contrast(1.05) saturate(.55)}
+:root[data-theme="dark"] .btn.pri{color:#0F1318}
+:root[data-theme="dark"] .tsp.gain .btn{color:#0F1318}
+:root[data-theme="dark"] #toast{background:#E6EAEF;color:#0F1318}
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.4 system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#1c1f24;color:#fff;position:sticky;top:0;z-index:1000}
-header h1{font-size:16px;margin:0 12px 0 0}
-header .sp{flex:1}
-button,.btn{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;background:#fff;color:#1c1f24}
-button.pri{background:var(--acc)} button.ok{background:#2fb36b;color:#fff} button:disabled{opacity:.5;cursor:default}
-input[type=date]{border-radius:8px;border:0;padding:7px;font:inherit}
-.pill{font-size:12px;padding:3px 8px;border-radius:999px;background:#333}
-.pill.on{background:#2fb36b}
-main{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:12px;padding:12px 16px}
-@media (max-width:1100px){main{grid-template-columns:1fr}}
-.banner{border-radius:10px;padding:10px 12px;margin-bottom:8px;white-space:pre-wrap}
-.banner.bad{background:#fdecec;border:1px solid #f3b4b4}
-.banner.q{background:#fff6e0;border:1px solid #f1d38c}
-.banner.ai{background:#eef0ff;border:1px solid #c9c7ff}
-.banner b{display:block;margin-bottom:4px}
-.routes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.card h3{margin:0;padding:10px 12px;font-size:14px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
-.card h3 .dot{width:12px;height:12px;border-radius:50%}
-.card .sub{padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px}
-.card .sub a{color:inherit}
-.grp{width:100%;font-weight:600;margin-top:4px}
-.mute{color:var(--mute);font-size:12px}
-.odo input{width:90px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;font:inherit}
-.alt{margin-top:6px} .alt select{max-width:100%;margin-top:4px;font:inherit}
-.tsp{padding:6px 12px;font-size:12px;color:var(--green);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.tsp.gain{color:var(--amber);background:#fff8e6}
-.tsp button{padding:3px 8px;font-size:12px;background:var(--acc)}
-.list{min-height:48px;padding:6px}
-.list.over{background:#fffbe6}
-.stop{border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin:4px 0;background:#fff;cursor:grab}
-.stop .top{display:flex;gap:6px;align-items:baseline}
-.stop .eta{font-weight:700;min-width:42px}
-.stop .ttl{font-weight:600;flex:1}
-.stop .addr{color:var(--mute);font-size:12px}
-.stop .more{display:none;font-size:12px;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.leaflet-tile{filter:saturate(.75) contrast(.95)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- верхняя панель ---------- */
+.top{position:sticky;top:0;z-index:1000;background:var(--paper);border-bottom:1px solid var(--line)}
+.top .in{display:flex;align-items:center;gap:10px;padding:10px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:6px}
+.brand .logo{width:30px;height:30px;border-radius:7px;background:var(--acc);display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;letter-spacing:.02em}
+.brand h1{font-size:15px}
+.brand small{display:block;font-size:11px;color:var(--mute);font-weight:500;margin-top:-1px}
+.datenav{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--paper);overflow:hidden}
+.datenav button{border:0;background:transparent;padding:7px 10px;cursor:pointer;color:var(--mute)}
+.datenav button:hover{background:var(--paper-2);color:var(--ink)}
+.datenav input{border:0;background:transparent;padding:7px 4px;font-weight:600;width:142px;text-align:center}
+.datenav .wd{font-size:12px;color:var(--mute);padding-right:10px;min-width:92px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--gray-soft);color:var(--mute);white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.7}
+.chip.draft{background:var(--amber-soft);color:var(--amber)}
+.chip.approved{background:var(--green-soft);color:var(--green)}
+.chip.sent{background:var(--blue-soft);color:var(--blue)}
+.chip.on{background:var(--green-soft);color:var(--green)}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-weight:600;cursor:pointer;background:var(--paper);color:var(--ink);transition:background .15s,transform .05s;white-space:nowrap}
+.btn:hover{background:var(--paper-2)} .btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{filter:brightness(.96)}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--mute)} .btn.ghost:hover{background:var(--gray-soft);color:var(--ink)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn svg{width:15px;height:15px;flex:none}
+#theme{padding:8px 9px} #theme .sun{display:none} :root[data-theme="dark"] #theme .sun{display:block} :root[data-theme="dark"] #theme .moon{display:none}
+#progress{position:fixed;left:0;top:0;height:3px;width:0;background:var(--acc);z-index:1200;transition:width .3s;opacity:0}
+#progress.on{opacity:1;animation:prog 1.6s ease-in-out infinite}
+@keyframes prog{0%{width:0;left:0}60%{width:60%;left:20%}100%{width:0;left:100%}}
+
+/* ---------- раскладка ---------- */
+main{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;padding:16px 20px 40px;align-items:start}
+@media (max-width:1180px){main{grid-template-columns:1fr}.side{position:static!important}}
+.side{position:sticky;top:66px;display:grid;gap:12px}
+
+/* ---------- сводка ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-bottom:14px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-s);padding:9px 12px;display:grid;gap:2px;min-width:0}
+.kpi .k{font-size:10.5px;color:var(--mute);font-weight:600;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:22px;font-weight:700;line-height:1.1}
+.kpi .v small{font-size:12px;color:var(--mute);font-weight:500;margin-left:4px}
+.kpi.bad .v{color:var(--red)} .kpi.warn .v{color:var(--amber)} .kpi.good .v{color:var(--green)}
+
+/* ---------- баннеры ---------- */
+.banner{border-radius:var(--r-s);padding:10px 14px 10px 40px;margin-bottom:10px;position:relative;font-size:13.5px}
+.banner::before{position:absolute;left:14px;top:10px;font-weight:800}
+.banner b{display:block;margin-bottom:3px}
+.banner ul{margin:0;padding-left:16px;display:grid;gap:2px}
+.banner.bad{background:var(--red-soft);color:var(--red)} .banner.bad::before{content:"!"}
+.banner.q{background:var(--amber-soft);color:var(--amber)} .banner.q::before{content:"?"}
+.banner.ai{background:var(--violet-soft);color:var(--violet)} .banner.ai::before{content:"✦"}
+.banner.ai ul{color:var(--ink)} .banner.bad ul{color:var(--ink)} .banner.q ul{color:var(--ink)}
+
+/* ---------- маршруты ---------- */
+.routes{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;align-items:start}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.route .head{padding:12px 14px 10px;border-top:3px solid var(--c,#999)}
+.route .head h3{font-size:14.5px;display:flex;align-items:center;gap:8px}
+.route .head h3 .veh{font-weight:500;color:var(--mute);font-size:12.5px}
+.route .stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:12.5px;color:var(--mute)}
+.route .stats b{color:var(--ink);font-weight:600}
+.route .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.route .tools a{font-size:12.5px;color:var(--blue);text-decoration:none;font-weight:600;padding:3px 0}
+.route .tools a:hover{text-decoration:underline}
+.odo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);margin-left:auto}
+.odo input{width:84px;padding:4px 7px;border:1px solid var(--line);border-radius:7px;background:var(--paper-2);font-family:var(--mono);font-size:12.5px}
+.tsp{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 14px;font-size:12.5px;color:var(--green);background:var(--green-soft)}
+.tsp.gain{color:var(--amber);background:var(--amber-soft)}
+.tsp.gain .btn{background:var(--acc);border-color:var(--acc);color:#fff}
+.list{padding:8px;min-height:56px;transition:background .15s}
+.list.over{background:var(--acc-soft)}
+.list:empty::after{content:"Перетащите точку сюда";display:block;text-align:center;color:var(--faint);font-size:12.5px;padding:14px;border:1.5px dashed var(--line);border-radius:var(--r-s)}
+.card.plain h3{padding:12px 14px;font-size:14px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:8px}
+.card.plain h3 .cnt{margin-left:auto;font-size:12px;color:var(--mute);font-weight:600;background:var(--gray-soft);padding:2px 8px;border-radius:999px}
+
+/* ---------- точка ---------- */
+.stop{position:relative;display:grid;grid-template-columns:52px 1fr;gap:0 10px;padding:9px 10px 9px 0;margin:4px 0;border:1px solid var(--line-2);border-radius:var(--r-s);background:var(--paper);cursor:grab;transition:border-color .15s,box-shadow .15s}
+.stop:hover{border-color:var(--line);box-shadow:var(--shadow)}
+.stop.dragging{opacity:.4}
+.stop[draggable=false]{cursor:default}
+.stop .t{text-align:center;padding-top:1px}
+.stop .t .eta{font-family:var(--mono);font-weight:600;font-size:13.5px}
+.stop .t .till{font-size:10.5px;color:var(--faint);margin-top:1px}
+.stop .t .ico{width:24px;height:24px;border-radius:7px;margin:0 auto;display:grid;place-items:center;background:var(--gray-soft);color:var(--mute)}
+.stop .t .ico.pickup{background:var(--blue-soft);color:var(--blue)} .stop .t .ico.delivery{background:var(--green-soft);color:var(--green)} .stop .t .ico.service{background:var(--violet-soft);color:var(--violet)}
+.stop .t .ico svg{width:14px;height:14px}
+.stop .ttl{font-weight:600;font-size:13.5px;line-height:1.3;display:flex;gap:6px;align-items:baseline}
+.stop .ttl>span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.stop.open .ttl>span:last-child{-webkit-line-clamp:unset}
+.stop .ttl .kind{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+.stop .addr{color:var(--mute);font-size:12.5px;margin-top:2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.stop.open .addr{-webkit-line-clamp:unset}
+.stop .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.stop .tags:empty{display:none}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--gray-soft);color:var(--mute);white-space:nowrap}
+.tag.u{background:var(--red-soft);color:var(--red)} .tag.a{background:var(--violet-soft);color:var(--violet)} .tag.r{background:var(--amber-soft);color:var(--amber)}
+.tag.l{background:var(--gray-soft);color:var(--ink)} .tag.k{font-family:var(--mono);font-weight:500}
+.stop .more{display:none;grid-column:1/-1;margin:8px 0 0 10px;padding-top:8px;border-top:1px dashed var(--line);font-size:12.5px}
 .stop.open .more{display:block}
-.stop.virt{background:#f7f7f7}
-.b{font-size:11px;padding:1px 6px;border-radius:4px;color:#fff;white-space:nowrap}
-.b.u{background:var(--red)} .b.a{background:var(--violet)} .b.r{background:var(--amber)} .b.l{background:#555} .b.k{background:#8a94a3}
-.warn{color:var(--amber)}
-.stop .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.stop .acts button{padding:3px 8px;font-size:12px;background:#eef0f3}
-#map{height:360px;border-radius:12px;border:1px solid var(--line)}
-.side .card{margin-top:12px}
-.side textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;resize:vertical}
-.side .pad{padding:10px 12px}
-#chat{max-height:260px;overflow:auto;font-size:13px}
-#chat .m{margin:6px 0;padding:6px 8px;border-radius:8px;white-space:pre-wrap}
-#chat .me{background:#fff6cc} #chat .bot{background:#eef0ff}
-.veh{display:flex;flex-wrap:wrap;gap:10px;font-size:13px}
-.empty{padding:40px;text-align:center;color:var(--mute)}
-#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1c1f24;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:2000;max-width:90vw}
-.busy{position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;align-items:center;justify-content:center;z-index:1500;font-weight:700}
+.stop .more .row{display:grid;grid-template-columns:88px 1fr;gap:6px;margin:3px 0}
+.stop .more .row b{color:var(--mute);font-weight:500}
+.stop .warn{color:var(--amber);margin-top:4px}
+.stop .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.stop .chev{position:absolute;right:8px;top:9px;color:var(--faint);transition:transform .15s}
+.stop.open .chev{transform:rotate(180deg)}
+.stop.virt{background:var(--paper-2);border-style:dashed;cursor:default}
+.stop.virt .ttl{font-weight:500;color:var(--mute)}
+.inl{display:grid;gap:6px;margin-top:8px;padding:8px;background:var(--paper-2);border-radius:8px}
+.inl .f{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.inl .g{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+.inl .g .bt{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+.inl .tw{display:flex;gap:6px;align-items:center}
+.inl .tw input{width:64px;text-align:center;font-family:var(--mono)}
+.inl input,.inl select{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--paper);min-width:0}
+.inl input[type=time]{font-family:var(--mono)}
+.inl input.wide{flex:1;min-width:180px}
+
+/* ---------- боковая панель ---------- */
+#map{height:340px;border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow);z-index:0}
+.side .card{box-shadow:none}
+.side h3{padding:11px 14px;font-size:13.5px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:8px}
+.side h3 svg{width:15px;height:15px;color:var(--mute)}
+.pad{padding:12px 14px}
+.grp{font-size:11.5px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.03em;margin:4px 0 6px}
+.grp:first-child{margin-top:0}
+.chk{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px}
+.chk:hover{background:var(--paper-2)}
+.chk input{accent-color:var(--acc);width:15px;height:15px;margin:0}
+.chk .sub{margin-left:auto;font-size:11.5px;color:var(--faint)}
+.chk.off{color:var(--mute)}
+textarea{width:100%;min-height:68px;border:1px solid var(--line);border-radius:var(--r-s);padding:9px 10px;resize:vertical;background:var(--paper-2);line-height:1.4}
+textarea:focus,input:focus,select:focus{outline:2px solid color-mix(in srgb,var(--acc) 45%,transparent);outline-offset:0}
+.hint{font-size:11.5px;color:var(--faint);margin-top:6px}
+#chat{display:grid;gap:6px;max-height:260px;overflow:auto;margin-bottom:8px}
+#chat:empty{display:none}
+#chat .m{padding:8px 10px;border-radius:10px;font-size:13px;white-space:pre-wrap;max-width:92%}
+#chat .me{background:var(--acc-soft);color:var(--ink);justify-self:end;border-bottom-right-radius:3px}
+#chat .bot{background:var(--paper-2);border-bottom-left-radius:3px}
+.row-btn{display:flex;gap:8px;align-items:center;margin-top:8px}
+
+/* ---------- пустое состояние и обратная связь ---------- */
+.empty{grid-column:1/-1;background:var(--paper);border:1.5px dashed var(--line);border-radius:var(--r);padding:48px 24px;text-align:center;color:var(--mute);display:grid;gap:10px;justify-items:center}
+.empty b{font-size:16px;color:var(--ink)}
+.empty .row-btn{justify-content:center}
+#toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;opacity:0;pointer-events:none;z-index:2000;max-width:min(90vw,560px);font-size:13.5px;box-shadow:var(--shadow);transition:opacity .2s,transform .2s}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <h1>АСМ · Планирование маршрутов</h1>
-  <input type="date" id="day">
-  <span class="pill" id="llm">ИИ</span>
-  <span class="pill" id="status">—</span>
+<div id="progress"></div>
+<header class="top"><div class="in">
+  <div class="brand"><div class="logo">АСМ</div><div><h1>Маршруты</h1><small>планирование на день</small></div></div>
+  <div class="datenav">
+    <button onclick="shiftDay(-1)" title="Предыдущий день" aria-label="Предыдущий день">‹</button>
+    <input type="date" id="day">
+    <button onclick="shiftDay(1)" title="Следующий день" aria-label="Следующий день">›</button>
+    <span class="wd" id="wd"></span>
+  </div>
+  <span class="chip" id="status">—</span>
+  <span class="chip" id="llm">ИИ</span>
   <span class="sp"></span>
-  <button onclick="buildSample()">Пример заявок</button>
-  <label class="btn">Загрузить заявки<input type="file" id="file" accept=".json,.csv,.xlsx" hidden onchange="buildFile(this)"></label>
-  <button onclick="replan()" id="bReplan">Пересчитать</button>
-  <button class="pri" onclick="approve()" id="bApprove">Утвердить</button>
-  <button onclick="reopen()" id="bReopen" hidden>Вернуть в черновик</button>
-  <button class="ok" onclick="sendAll()" id="bSend" hidden>Отправить водителям</button>
-</header>
+  <button class="btn ghost" id="theme" onclick="toggleTheme()" title="Светлая / тёмная тема" aria-label="Переключить тему">
+    <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+  <button class="btn ghost" onclick="buildSample()">Пример заявок</button>
+  <label class="btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Загрузить заявки<input type="file" id="file" accept=".json,.csv,.xlsx" hidden onchange="buildFile(this)"></label>
+  <button class="btn" onclick="replan()" id="bReplan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    Пересчитать</button>
+  <button class="btn pri" onclick="approve()" id="bApprove">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Утвердить</button>
+  <button class="btn" onclick="reopen()" id="bReopen" hidden>Вернуть в черновик</button>
+  <button class="btn ok" onclick="sendAll()" id="bSend" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    Отправить водителям</button>
+</div></header>
 
 <main>
   <section>
+    <div class="kpis" id="kpis" hidden></div>
     <div id="banners"></div>
-    <div class="routes" id="routes"><div class="empty">Плана на эту дату нет. Загрузите заявки или нажмите «Пример заявок».</div></div>
+    <div class="routes" id="routes"></div>
   </section>
   <aside class="side">
     <div id="map"></div>
-    <div class="card"><h3>Машины и водители</h3><div class="pad veh" id="veh"></div></div>
-    <div class="card"><h3>Помощник (правки обычным текстом)</h3>
+    <div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Машины и водители</h3><div class="pad" id="veh"></div></div>
+    <div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Помощник</h3>
       <div class="pad"><div id="chat"></div>
-        <textarea id="msg" placeholder="Например: Балашиху отдай Ушакову, а Staria №1 утром в сервис до 11"></textarea>
-        <button class="pri" onclick="ask()">Выполнить</button></div></div>
-    <div class="card"><h3>Срочная заявка</h3>
-      <div class="pad"><textarea id="urgent" placeholder="Текст как пишете в таблицу: адрес, что сделать, к какому времени, контакт"></textarea>
-        <button onclick="addUrgent()">Добавить и пересчитать</button></div></div>
+        <textarea id="msg" placeholder="Напишите правку обычным текстом: «Балашиху отдай Ушакову», «Staria №1 утром в сервис до 11»"></textarea>
+        <div class="row-btn"><button class="btn pri sm" onclick="ask()">Выполнить</button><span class="hint">Ctrl+Enter</span></div></div></div>
+    <div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Срочная заявка</h3>
+      <div class="pad"><textarea id="urgent" placeholder="Адрес, что сделать, к какому времени, контакт — как пишете в таблицу"></textarea>
+        <div class="row-btn"><button class="btn sm" onclick="addUrgent()">Добавить и пересчитать</button></div></div></div>
   </aside>
 </main>
-<div id="toast"></div><div class="busy" id="busy">Считаю…</div>
+<div id="toast"></div>
 
 <script>
-const COLORS = ["#e4572e","#2e86de","#17a673","#8e44ad","#f39c12"];
+const COLORS = ["#1F3A5F","#B5472B","#1E7A45","#5E4B8B","#8A5A0A"];
+const COLORS_DARK = ["#5B8DD6","#E8846A","#5FCB8E","#A9A0F0","#E0AE5C"];
+const routeColor = i => (document.documentElement.dataset.theme==="dark" ? COLORS_DARK : COLORS)[i%COLORS.length];
+function toggleTheme(){ const t = document.documentElement.dataset.theme==="dark" ? "light" : "dark"; document.documentElement.dataset.theme=t; try{localStorage.setItem("asm-theme",t)}catch(e){} if(S.fleet) render(); }
 const KIND = {pickup:"Забрать", delivery:"Выгрузить", service:"Задача"};
+const ICON = {
+  pickup:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+  delivery:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>',
+  service:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'};
+const WD = ["вс","пн","вт","ср","чт","пт","сб"];
 let S = {plan:null, fleet:null};
+let pendingDrivers = {};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const day = () => $("day").value;
+const fmtDay = d => d.split("-").reverse().join(".");
 
-function toast(t){ const el=$("toast"); el.textContent=t; el.style.display="block"; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display="none",4500); }
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("on"),4500); }
+let busyN = 0;
 async function api(path, opts={}){
-  $("busy").style.display="flex";
+  busyN++; $("progress").classList.add("on");
   try{
     const r = await fetch(path, opts);
     const j = await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(Array.isArray(j.detail) ? j.detail.map(d=>d.msg).join("; ") : (j.detail || r.statusText));
     return j;
-  } finally { $("busy").style.display="none"; }
+  } finally { if(--busyN===0) $("progress").classList.remove("on"); }
 }
 const post = (p, body) => api(p, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body||{})});
 
 async function load(){
+  $("wd").textContent = WD[new Date(day()+"T12:00").getDay()];
   const j = await api(`/api/state/${day()}`);
   S.fleet = j.fleet; S.plan = j.plan;
-  $("llm").textContent = j.llm ? `ИИ: ${j.model}` : "ИИ выключен (нет ключа)";
-  $("llm").className = "pill" + (j.llm ? " on" : "");
+  $("llm").textContent = j.llm ? `ИИ · ${j.model}` : "ИИ выключен";
+  $("llm").className = "chip" + (j.llm ? " on" : "");
+  $("llm").title = j.llm ? "Разбор заявок и помощник работают через OpenAI" : "Нет OPENAI_API_KEY: заявки разбираются правилами, помощник недоступен";
   render();
 }
+function shiftDay(n){ const d = new Date(day()+"T12:00"); d.setDate(d.getDate()+n); $("day").value = d.toLocaleDateString("sv-SE"); pendingDrivers = {}; load(); }
 
 const driver = id => S.fleet.drivers.find(d=>d.id===id);
 const vehicle = id => S.fleet.vehicles.find(v=>v.id===id);
+const shortName = n => { const [f, i, o] = n.split(" "); return i ? `${f} ${i[0]}.${o ? o[0]+"." : ""}` : f; };
 
 function stopHtml(id, p, locked){
   const s = S.plan.stops[id]; if(!s) return "";
   const virt = id.startsWith("load:");
-  const badges = [
-    s.urgent ? '<span class="b u">срочно</span>' : "",
-    s.requires_approval ? '<span class="b a">по согласованию</span>' : "",
-    s.needs_review ? '<span class="b r">проверить</span>' : "",
-    locked ? '<span class="b l">закреплено</span>' : "",
-    s.weight_kg ? `<span class="b k">${Math.round(s.weight_kg)} кг</span>` : ""].join(" ");
   const draggable = S.plan.status==="draft" && !virt;
-  return `<div class="stop${virt?" virt":""}" draggable="${draggable}" data-id="${esc(id)}" onclick="this.classList.toggle('open')">
-    <div class="top"><span class="eta">${p ? p.eta : ""}</span><span class="ttl">${esc(KIND[s.kind])}: ${esc(s.title||s.address)}</span></div>
-    <div class="addr">${esc(s.address)} · окно ${s.tw_start}–${s.tw_end}</div>
-    <div>${badges}</div>
-    <div class="more">
-      ${s.task ? `<div><b>Задача:</b> ${esc(s.task)}</div>` : ""}
-      ${s.contact ? `<div><b>Контакт:</b> ${esc(s.contact)}</div>` : ""}
-      ${s.order_no||s.invoice_no ? `<div><b>Заказ/счёт:</b> ${esc(s.order_no)} ${esc(s.invoice_no)}</div>` : ""}
+  const tags = [
+    s.urgent ? '<span class="tag u">срочно</span>' : "",
+    s.requires_approval ? '<span class="tag a">по согласованию</span>' : "",
+    s.needs_review ? '<span class="tag r">проверить</span>' : "",
+    locked ? '<span class="tag l">закреплено</span>' : "",
+    s.weight_kg ? `<span class="tag k">${Math.round(s.weight_kg)} кг</span>` : ""].join("");
+  const docs = [s.order_no && `заказ ${s.order_no}`, s.invoice_no && `счёт ${s.invoice_no}`].filter(Boolean).join(" · ");
+  return `<div class="stop${virt?" virt":""}${s._open?" open":""}" draggable="${draggable}" data-id="${esc(id)}" onclick="toggleStop(event,'${esc(id)}')">
+    <div class="t">${p ? `<div class="eta">${p.eta}</div><div class="till">до ${s.tw_end}</div>` : `<div class="ico ${s.kind}">${ICON[s.kind]}</div>`}</div>
+    <div>
+      <div class="ttl"><span class="kind">${esc(KIND[s.kind])}</span><span>${esc(s.title||s.address)}</span></div>
+      <div class="addr">${esc(s.address)}${p ? "" : ` · окно ${s.tw_start}–${s.tw_end}`}</div>
+      <div class="tags">${tags}</div>
+    </div>
+    ${virt ? "" : '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'}
+    <div class="more" onclick="event.stopPropagation()">
+      ${s.task ? `<div class="row"><b>Задача</b><span>${esc(s.task)}</span></div>` : ""}
+      ${s.contact ? `<div class="row"><b>Контакт</b><span>${esc(s.contact)}</span></div>` : ""}
+      ${docs ? `<div class="row"><b>Документы</b><span>${esc(docs)}</span></div>` : ""}
+      ${p ? `<div class="row"><b>Окно</b><span class="num">${s.tw_start}–${s.tw_end}</span></div>` : ""}
       ${(s.warnings||[]).map(w=>`<div class="warn">⚠ ${esc(w)}</div>`).join("")}
-      ${draggable && (s.alt_addresses||[]).length ? `<div class="alt" onclick="event.stopPropagation()"><b>Другой склад контрагента:</b>
+      ${draggable && (s.alt_addresses||[]).length ? `<div class="inl"><div class="f"><span>Другой склад контрагента:</span>
         <select onchange="if(this.value) setAddress('${esc(id)}', this.value)"><option value="">— выбрать —</option>
-        ${s.alt_addresses.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("")}</select></div>` : ""}
-      ${draggable ? `<div class="acts" onclick="event.stopPropagation()">
-        <button onclick="editWindow('${esc(id)}')">Окно/время</button>
-        <button onclick="editAddress('${esc(id)}')">Адрес</button>
-        <button onclick="toggleUrgent('${esc(id)}')">${s.urgent?"Не срочно":"Срочно"}</button>
-        <button onclick="move('${esc(id)}', null, null)">Снять с плана</button></div>` : ""}
+        ${s.alt_addresses.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("")}</select></div></div>` : ""}
+      <div class="inl" id="ed-${esc(id)}" hidden></div>
+      ${draggable ? `<div class="acts">
+        <button class="btn sm" onclick="editWindow('${esc(id)}')">Окно времени</button>
+        <button class="btn sm" onclick="editAddress('${esc(id)}')">Адрес</button>
+        <button class="btn sm" onclick="toggleUrgent('${esc(id)}')">${s.urgent?"Снять срочность":"Срочно"}</button>
+        <button class="btn sm ghost" onclick="move('${esc(id)}', null, null)">Снять с плана</button></div>` : ""}
     </div></div>`;
+}
+function toggleStop(e, id){ if(e.target.closest("button,select,input,a")) return; const s=S.plan.stops[id]; s._open=!s._open; e.currentTarget.classList.toggle("open", s._open); }
+
+function kpis(P){
+  const stops = Object.values(P.stops).filter(s=>!s.id.startsWith("load:"));
+  const inRoutes = new Set(P.routes.flatMap(r=>r.stops.map(p=>p.stop_id)));
+  const planned = stops.filter(s=>inRoutes.has(s.id)).length;
+  const latest = P.routes.map(r=>r.return_eta).sort().at(-1) || "—";
+  const km = P.routes.reduce((a,r)=>a+r.distance_km,0);
+  const review = stops.filter(s=>s.needs_review).length;
+  return [
+    ["Маршрутов", P.routes.length, ""],
+    ["Точек в плане", planned, `<small>из ${stops.length}</small>`],
+    ["Не распределено", P.unassigned.length, "", P.unassigned.length ? "warn" : "good"],
+    ["Нарушений", P.violations.length, "", P.violations.length ? "bad" : "good"],
+    ["Проверить", review, "", review ? "warn" : ""],
+    ["Последний возврат", `<span class="num">${latest}</span>`, ""],
+    ["Пробег", Math.round(km), "<small>км</small>"],
+  ].map(([k,v,x,cls])=>`<div class="kpi ${cls||""}"><span class="k">${k}</span><span class="v">${v}${x}</span></div>`).join("");
 }
 
 function render(){
   const P = S.plan;
   const locked = P && P.status !== "draft";
-  $("veh").innerHTML = `<div class="grp">Машины</div>` + S.fleet.vehicles.map(v=>`<label><input type="checkbox" data-v="${v.id}" ${locked?"disabled":""} ${P && P.unavailable_vehicles.includes(v.id) ? "" : "checked"}> ${esc(v.name)}</label>`).join("")
-    + `<div class="grp">Водители на ${day().split("-").reverse().join(".")}</div>` + S.fleet.drivers.map(d=>`<label title="${esc(d.schedule?.type||"")}"><input type="checkbox" data-d="${d.id}" ${locked?"disabled":""} ${d.works_today?"checked":""} onchange="toggleDriver('${d.id}', this.checked)"> ${esc(d.name.split(" ").slice(0,2).join(" "))} <span class="mute">${esc(d.schedule?.type||"")}</span></label>`).join("");
-  if(!P){ $("routes").innerHTML = '<div class="empty">Плана на эту дату нет. Загрузите заявки или нажмите «Пример заявок».</div>'; $("banners").innerHTML=""; $("status").textContent="—"; drawMap(); return; }
-  const draft = P.status==="draft";
-  $("status").textContent = {draft:"Черновик", approved:"Утверждён", sent:"Отправлен"}[P.status];
-  $("bApprove").hidden = !draft; $("bReplan").hidden = !draft; $("bReopen").hidden = draft; $("bSend").hidden = draft;
+  $("veh").innerHTML = `<div class="grp">Машины</div>` +
+    S.fleet.vehicles.map(v=>`<label class="chk ${P && P.unavailable_vehicles.includes(v.id) ? "off":""}"><input type="checkbox" data-v="${v.id}" ${locked?"disabled":""} ${P && P.unavailable_vehicles.includes(v.id) ? "" : "checked"} onchange="this.closest('.chk').classList.toggle('off',!this.checked)"> ${esc(v.name)}<span class="sub">${esc(v.plate||"")}</span></label>`).join("") +
+    `<div class="grp" style="margin-top:10px">Водители на ${fmtDay(day())}</div>` +
+    S.fleet.drivers.map(d=>`<label class="chk ${d.works_today?"":"off"}"><input type="checkbox" data-d="${d.id}" ${locked?"disabled":""} ${d.works_today?"checked":""} onchange="toggleDriver('${d.id}', this.checked)"> ${esc(shortName(d.name))}<span class="sub">${esc(d.schedule?.type||"")}${d.works_today?"":" · выходной"}</span></label>`).join("");
 
+  if(!P){
+    $("routes").innerHTML = `<div class="empty"><b>На ${fmtDay(day())} плана ещё нет</b><span>Загрузите выгрузку из 1С (JSON, CSV, Excel) или посмотрите на примере.</span>
+      <div class="row-btn"><label class="btn pri">Загрузить заявки<input type="file" accept=".json,.csv,.xlsx" hidden onchange="buildFile(this)"></label><button class="btn" onclick="buildSample()">Пример заявок</button></div></div>`;
+    $("banners").innerHTML=""; $("kpis").hidden = true;
+    $("status").textContent="нет плана"; $("status").className="chip";
+    $("bApprove").hidden = $("bReplan").hidden = $("bReopen").hidden = $("bSend").hidden = true;
+    drawMap(); return;
+  }
+  const draft = P.status==="draft";
+  $("status").textContent = {draft:"Черновик", approved:"Утверждён", sent:"Отправлен водителям"}[P.status];
+  $("status").className = "chip " + P.status;
+  $("bApprove").hidden = !draft; $("bReplan").hidden = !draft; $("bReopen").hidden = draft; $("bSend").hidden = draft;
+  $("kpis").hidden = false; $("kpis").innerHTML = kpis(P);
+
+  const list = a => `<ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
   let b = "";
-  if(P.violations.length) b += `<div class="banner bad"><b>Нарушения ограничений (${P.violations.length})</b>${P.violations.map(esc).join("\n")}</div>`;
-  if(P.questions.length) b += `<div class="banner q"><b>Вопросы ИИ по заявкам</b>${P.questions.map(esc).join("\n")}</div>`;
-  if(P.notes.length) b += `<div class="banner ai"><b>Пояснение</b>${P.notes.map(esc).join("\n")}</div>`;
+  if(P.violations.length) b += `<div class="banner bad"><b>Нарушения ограничений · ${P.violations.length}</b>${list(P.violations)}</div>`;
+  if(P.questions.length) b += `<div class="banner q"><b>Вопросы ИИ по заявкам</b>${list(P.questions)}</div>`;
+  if(P.notes.length) b += `<div class="banner ai"><b>Пояснение</b>${list(P.notes)}</div>`;
   $("banners").innerHTML = b;
 
   const cards = P.routes.map((r,i)=>{
-    const d = driver(r.driver_id), v = vehicle(r.vehicle_id);
-    return `<div class="card"><h3><span class="dot" style="background:${COLORS[i%COLORS.length]}"></span>${esc(d.name)}</h3>
-      <div class="sub"><span>${esc(v.name)} ${esc(v.plate||"")}</span><span>возврат ${r.return_eta}</span><span>${r.distance_km} км</span>
-        <span>макс. ${Math.round(r.load_kg_max)}/${v.capacity_kg} кг</span>
-        <a href="/driver/${day()}/${r.driver_id}" target="_blank">лист водителя</a><a href="${esc(r.yandex_url)}" target="_blank">Я.Карты</a>
-        <label class="odo">пробег утром, км <input type="number" min="0" step="1" value="${r.odometer_start ?? ""}" onchange="edit('set_odometer',{driver_id:'${r.driver_id}', km: this.value===''? null : +this.value})"></label></div>
-      ${r.tsp ? `<div class="tsp${r.tsp_gain_min>0?" gain":""}">${esc(r.tsp)}${r.tsp_gain_min>0 && draft ? ` <button onclick="edit('optimize_order',{driver_id:'${r.driver_id}'})">Оптимальный порядок</button>` : ""}</div>` : ""}
+    const d = driver(r.driver_id), v = vehicle(r.vehicle_id), c = routeColor(i);
+    const loadPct = Math.round(100*r.load_kg_max/v.capacity_kg);
+    return `<div class="card route" style="--c:${c}"><div class="head">
+      <h3>${esc(shortName(d.name))} <span class="veh">${esc(v.name)}${v.plate?` · ${esc(v.plate)}`:""}</span></h3>
+      <div class="stats"><span>возврат <b class="num">${r.return_eta}</b></span><span><b>${r.distance_km}</b> км</span><span>загрузка <b>${Math.round(r.load_kg_max)}</b>/${v.capacity_kg} кг${loadPct>=90?` <span class="tag r">${loadPct}%</span>`:""}</span><span><b>${r.stops.filter(p=>!p.stop_id.startsWith("load:")).length}</b> точек</span></div>
+      <div class="tools"><a href="/driver/${day()}/${r.driver_id}" target="_blank">Лист водителя ↗</a><a href="${esc(r.yandex_url)}" target="_blank">Яндекс.Карты ↗</a>
+        <label class="odo" title="Пробег на начало дня, км">пробег утром <input type="number" min="0" step="1" placeholder="км" value="${r.odometer_start ?? ""}" onchange="edit('set_odometer',{driver_id:'${r.driver_id}', km: this.value===''? null : +this.value})"></label></div></div>
+      ${r.tsp ? `<div class="tsp${r.tsp_gain_min>0?" gain":""}">${esc(r.tsp)}${r.tsp_gain_min>0 && draft ? ` <button class="btn sm" onclick="edit('optimize_order',{driver_id:'${r.driver_id}'})">Оптимальный порядок</button>` : ""}</div>` : ""}
       <div class="list" data-driver="${r.driver_id}">${r.stops.map(p=>stopHtml(p.stop_id,p,p.locked)).join("")}</div></div>`;
   });
-  // водители, которые работают сегодня, но без маршрута — чтобы можно было перетащить им точку
   const used = new Set(P.routes.map(r=>r.driver_id));
   S.fleet.drivers.filter(d=>d.works_today && !used.has(d.id)).forEach(d=>{
-    cards.push(`<div class="card"><h3><span class="dot" style="background:#bbb"></span>${esc(d.name)}</h3>
-      <div class="sub">без маршрута — перетащите точку сюда</div><div class="list" data-driver="${d.id}"></div></div>`);
+    cards.push(`<div class="card route" style="--c:var(--line)"><div class="head"><h3>${esc(shortName(d.name))} <span class="veh">без маршрута</span></h3></div><div class="list" data-driver="${d.id}"></div></div>`);
   });
-  const un = P.unassigned.map(id=>stopHtml(id,null,false)).join("");
-  const ex = P.excluded.map(id=>stopHtml(id,null,false)).join("");
-  cards.push(`<div class="card"><h3>Нераспределённые (${P.unassigned.length})</h3><div class="list" data-driver="">${un}</div></div>`);
-  if(P.excluded.length) cards.push(`<div class="card"><h3>Сняты с плана (${P.excluded.length})</h3><div class="list" data-driver="">${ex}</div></div>`);
+  cards.push(`<div class="card plain"><h3>Не распределено <span class="cnt">${P.unassigned.length}</span></h3><div class="list" data-driver="">${P.unassigned.map(id=>stopHtml(id,null,false)).join("")}</div></div>`);
+  if(P.excluded.length) cards.push(`<div class="card plain"><h3>Сняты с плана <span class="cnt">${P.excluded.length}</span></h3><div class="list" data-driver="">${P.excluded.map(id=>stopHtml(id,null,false)).join("")}</div></div>`);
   $("routes").innerHTML = cards.join("");
   bindDnD(); drawMap();
 }
 
 function bindDnD(){
   document.querySelectorAll(".stop[draggable=true]").forEach(el=>{
-    el.addEventListener("dragstart", e=>{ e.dataTransfer.setData("text/plain", el.dataset.id); });
+    el.addEventListener("dragstart", e=>{ e.dataTransfer.setData("text/plain", el.dataset.id); el.classList.add("dragging"); });
+    el.addEventListener("dragend", ()=>el.classList.remove("dragging"));
   });
   document.querySelectorAll(".list").forEach(list=>{
     list.addEventListener("dragover", e=>{ e.preventDefault(); list.classList.add("over"); });
@@ -230,46 +430,51 @@ function bindDnD(){
 
 let map, layer;
 function drawMap(){
-  if(!map){ map = L.map("map").setView([55.75,37.7],9);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map); layer = L.layerGroup().addTo(map); }
+  if(!map){ map = L.map("map",{zoomControl:true}).setView([55.75,37.7],9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:19}).addTo(map); layer = L.layerGroup().addTo(map); }
   layer.clearLayers();
   const base = [S.fleet.base.lat, S.fleet.base.lon];
-  L.circleMarker(base,{radius:8,color:"#000",fillColor:"#ffcc00",fillOpacity:1}).bindTooltip("База").addTo(layer);
+  L.marker(base,{icon:L.divIcon({className:"",html:`<div style="background:${document.documentElement.dataset.theme==="dark"?"#E6EAEF":"#1A2130"};border:2px solid ${document.documentElement.dataset.theme==="dark"?"#171C23":"#fff"};border-radius:4px;width:16px;height:16px;transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>`,iconSize:[18,18],iconAnchor:[9,9]})}).bindTooltip("База АСМ").addTo(layer);
   if(!S.plan) return;
   const bounds = [base];
   S.plan.routes.forEach((r,i)=>{
-    const c = COLORS[i%COLORS.length];
+    const c = routeColor(i);
     const pts = [base, ...r.stops.map(p=>{const s=S.plan.stops[p.stop_id]; return [s.lat,s.lon];}), base];
-    L.polyline(pts,{color:c,weight:3,opacity:.8}).addTo(layer);
-    r.stops.forEach((p,k)=>{ const s=S.plan.stops[p.stop_id]; if(p.stop_id.startsWith("load:")) return;
+    L.polyline(pts,{color:c,weight:3.5,opacity:.85,lineJoin:"round"}).addTo(layer);
+    let n = 0;
+    r.stops.forEach(p=>{ const s=S.plan.stops[p.stop_id]; if(p.stop_id.startsWith("load:")) return; n++;
       bounds.push([s.lat,s.lon]);
-      L.marker([s.lat,s.lon],{icon:L.divIcon({className:"",html:`<div style="background:${c};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #fff">${k+1}</div>`})})
-        .bindTooltip(`${p.eta} ${s.title}`).addTo(layer); });
+      L.marker([s.lat,s.lon],{icon:L.divIcon({className:"",iconSize:[24,24],iconAnchor:[12,12],html:`<div style="background:${c};color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font:600 12px ${getComputedStyle(document.body).getPropertyValue('--mono')};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)">${n}</div>`})})
+        .bindTooltip(`${p.eta} · ${s.title}`).addTo(layer); });
   });
-  S.plan.unassigned.forEach(id=>{ const s=S.plan.stops[id]; if(s && s.lat) L.circleMarker([s.lat,s.lon],{radius:6,color:"#999"}).bindTooltip("Не распределено: "+s.title).addTo(layer); });
-  map.fitBounds(bounds,{padding:[20,20]});
+  S.plan.unassigned.forEach(id=>{ const s=S.plan.stops[id]; if(s && s.lat){ bounds.push([s.lat,s.lon]);
+    L.circleMarker([s.lat,s.lon],{radius:7,color:"#fff",weight:2,fillColor:"#9AA3AF",fillOpacity:1}).bindTooltip("Не распределено: "+s.title).addTo(layer); }});
+  map.fitBounds(bounds,{padding:[24,24]});
 }
 
 async function edit(tool, args){
-  try{ const j = await post(`/api/plan/${day()}/edit`, {tool, args}); S.plan = j.plan; render(); }
+  try{ const j = await post(`/api/plan/${day()}/edit`, {tool, args}); const open = Object.fromEntries(Object.values(S.plan.stops).filter(s=>s._open).map(s=>[s.id,1]));
+    S.plan = j.plan; Object.keys(open).forEach(id=>{ if(S.plan.stops[id]) S.plan.stops[id]._open = true; }); render(); }
   catch(e){ toast(e.message); }
 }
 const move = (stop_id, driver_id, position) => edit("move_stop", {stop_id, driver_id, position});
-function editWindow(id){ const s=S.plan.stops[id];
-  const v = prompt("Окно ЧЧ:ММ-ЧЧ:ММ", `${s.tw_start}-${s.tw_end}`); if(!v) return;
-  const [a,b] = v.split("-").map(x=>x.trim());
-  edit("update_stop", {stop_id:id, address:null, tw_start:a, tw_end:b, urgent:null, task:null, contact:null, service_min:null}); }
-function editAddress(id){ const s=S.plan.stops[id];
-  const v = prompt("Адрес", s.address); if(!v) return;
-  edit("update_stop", {stop_id:id, address:v, tw_start:null, tw_end:null, urgent:null, task:null, contact:null, service_min:null}); }
-function setAddress(id, a){ return edit("update_stop", {stop_id:id, address:a, tw_start:null, tw_end:null, urgent:null, task:null, contact:null, service_min:null}); }
+const upd = (id, patch) => edit("update_stop", {stop_id:id, address:null, tw_start:null, tw_end:null, urgent:null, task:null, contact:null, service_min:null, ...patch});
+function editWindow(id){ const s=S.plan.stops[id], box=$("ed-"+id); box.hidden=false;
+  box.innerHTML = `<div class="g"><span>Окно</span><div class="tw"><input id="tw1-${esc(id)}" value="${s.tw_start}" placeholder="09:00" inputmode="numeric"><span>—</span><input id="tw2-${esc(id)}" value="${s.tw_end}" placeholder="18:00" inputmode="numeric"></div>
+    <span>На точке</span><div class="tw"><input type="number" id="svc-${esc(id)}" value="${s.service_min}" min="1" max="480"><span>мин</span></div>
+    <div class="bt"><button class="btn sm ghost" onclick="$('ed-${esc(id)}').hidden=true">Отмена</button><button class="btn pri sm" onclick="upd('${esc(id)}',{tw_start:$('tw1-${esc(id)}').value, tw_end:$('tw2-${esc(id)}').value, service_min:+$('svc-${esc(id)}').value})">Сохранить</button></div></div>`;
+  $("tw1-"+id).focus(); }
+function editAddress(id){ const s=S.plan.stops[id], box=$("ed-"+id); box.hidden=false;
+  box.innerHTML = `<div class="f"><input class="wide" id="adr-${esc(id)}" value="${esc(s.address)}" placeholder="Город, улица, дом">
+    <button class="btn pri sm" onclick="upd('${esc(id)}',{address:$('adr-${esc(id)}').value})">Найти и сохранить</button><button class="btn sm ghost" onclick="$('ed-${esc(id)}').hidden=true">Отмена</button></div>`;
+  $("adr-"+id).focus(); }
+function setAddress(id, a){ return upd(id, {address:a}); }
+function toggleUrgent(id){ upd(id, {urgent: !S.plan.stops[id].urgent}); }
 function toggleDriver(id, works){
   // после отметки перечитываем состояние: список «кто работает» приходит вместе с парком, а не с планом
   if(S.plan) return edit("set_driver", {driver_id:id, works}).then(load);
-  pendingDrivers[id] = works;   // плана ещё нет — учтём при формировании
+  pendingDrivers[id] = works; render();
 }
-let pendingDrivers = {};
-function toggleUrgent(id){ edit("update_stop", {stop_id:id, address:null, tw_start:null, tw_end:null, urgent:!S.plan.stops[id].urgent, task:null, contact:null, service_min:null}); }
 const unavailable = () => [...document.querySelectorAll("#veh input[data-v]")].filter(x=>!x.checked).map(x=>x.dataset.v);
 const replan = () => edit("replan", {unavailable_vehicles: unavailable()});
 
@@ -306,6 +511,8 @@ async function addUrgent(){
   try{ const j = await post(`/api/plan/${day()}/tasks`, {text:t}); S.plan=j.plan; $("urgent").value=""; render(); toast("Заявка добавлена"); }
   catch(e){ toast(e.message); }
 }
+$("msg").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) ask(); });
+$("urgent").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) addUrgent(); });
 
 // логист планирует вечером на следующий рабочий день; дата — по местному времени, не по UTC
 function nextWorkday(){ const d = new Date(); d.setDate(d.getDate()+1); while([0,6].includes(d.getDay())) d.setDate(d.getDate()+1); return d.toLocaleDateString("sv-SE"); }
