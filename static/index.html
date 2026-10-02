@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("asm-theme")||"light"}catch(e){}</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("asm-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <style>
 :root{
   --bg:#F4F5F7; --paper:#FFFFFF; --paper-2:#F7F8FA; --ink:#1A2130; --mute:#5F6B7A; --faint:#98A2B0; --line:#DDE2E8; --line-2:#EAEDF1;
@@ -430,7 +430,8 @@ function bindDnD(){
 
 let map, layer;
 function drawMap(){
-  if(!map){ map = L.map("map",{zoomControl:true}).setView([55.75,37.7],9);
+  if(!map){ map = L.map("map",{zoomControl:true, attributionControl:false}).setView([55.75,37.7],9);
+    L.control.attribution({prefix:false}).addTo(map);   // без подписи Leaflet, только источник карты
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:19}).addTo(map); layer = L.layerGroup().addTo(map); }
   layer.clearLayers();
   const base = [S.fleet.base.lat, S.fleet.base.lon];
